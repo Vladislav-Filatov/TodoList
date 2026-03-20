@@ -35,7 +35,39 @@ export const TodoList = () => {
     setShowDeleteModal(false);
   };
 
+  const getNextStatus = (status: Status)=> {
+    switch (status) {
+      case Status.TODO:
+        return {
+          status: Status.PROGRESS,
+          progress: 50,
+        };
+      case Status.PROGRESS:
+        return {
+          status: Status.DONE,
+          progress: 100,
+        };
+      case Status.DONE:
+        return {
+          status: Status.TODO,
+          progress: 0,
+        };
+    }
+  };
+
+  const onChangeStatus = (taskToChange: Task) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id===taskToChange.id ?
+          {...task, status: getNextStatus(task.status).status, progress: getNextStatus(task.status).progress}
+        :
+          task
+      )
+    )
+  };
+
   const onSubmitTask = (title: string, priority:Prioroty) => {
+    if (title.length===0) return;
     if (editingTask) {
       setTasks((prevTasks) =>
         prevTasks.map((task) =>
@@ -75,7 +107,7 @@ export const TodoList = () => {
         </div>
         <div className={styles['task-container']}>
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} />
+            <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} onChangeStatus={onChangeStatus}/>
           ))}
         </div>
       </div>

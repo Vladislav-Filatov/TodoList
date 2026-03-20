@@ -5,18 +5,19 @@ import { CircularProgressBar } from '../../ui/CircularProgressBar/CircularProgre
 import styles from './style.module.scss';
 import type { Task } from '../../api/serverData/taskList';
 import { ru_priority, ru_status } from '../../shared/translate';
-// import { Prioroty } from '../../../../types';
 
 type TaskCardProps = {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (task: Task) => void;
+  onChangeStatus: (task: Task) => void;
 };
 
 export const TaskCard = ({
   task,
   onEdit,
-  onDelete
+  onDelete,
+  onChangeStatus
 }: TaskCardProps) => {
     const { title, priority, status, progress } = task;
   return (
@@ -39,6 +40,7 @@ export const TaskCard = ({
       <div className={styles['task-status-wrapper']}>
         <button
           className={classNames(styles[`status--${status}`], styles['status'])}
+          onClick={() => onChangeStatus(task)}
         >
           {ru_status[status]}
         </button>

@@ -50,7 +50,7 @@ export const AddEditTaskModal = ({
                   key={priority}
                   onClick={() => setSelectedPriority(priority)}
                   className={classNames(
-                    styles[`${priority}-selected`],
+                    priority === selectedPriority && styles[`${priority}-selected`],
                     styles[priority]
                   )}
                 >
@@ -62,6 +62,7 @@ export const AddEditTaskModal = ({
           <div className="flx-right mt-50">
             <Button
               title={buttonText}
+              disabled={!title}
               onClick={() => {
                 onAddTask(title, selectedPriority);
               }}
