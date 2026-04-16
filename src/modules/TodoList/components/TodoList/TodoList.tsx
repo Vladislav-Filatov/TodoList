@@ -1,95 +1,58 @@
 import styles from './style.module.scss';
-import {useState} from 'react';
 import Add from '../../../../assets/icons/add.svg?react';
 import {AddEditTaskModal} from '../AddEditTaskModal/AddEditTaskModal';
 import {Button} from '../../../../ui/Button/Button';
 import {DeleteModal} from '../DeleteModal/DeleteModal';
 import {TaskCard} from '../TaskCard/TaskCard';
 import type {Task} from '../../api/serverData/taskList';
-import {taskList} from '../../api/serverData/taskList';
-import {Prioroty, Status} from '../../../../types';
+import {Prioroty} from '../../../../types';
+import {useAppDispatch, useAppSelector} from "../../../../hooks/redux.ts";
+import {
+  closeAddEditModal,
+  closeDeleteModal,
+  openAddModal,
+  openDeleteModal,
+  openEditModal
+} from "../../../../store/todoUiSlice.ts";
+import {addTask, editTask, changeStatus, deleteTask} from "../../../../store/tasksSlice.ts";
 
 export const TodoList = () => {
-  const [tasks, setTasks] = useState(taskList);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
-  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
-  const [showAddEditModal, setShowAddEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const tasks = useAppSelector(state => state.tasks.tasks);
+  const editingTask = useAppSelector(state => state.todoUi.editingTask);
+  const taskToDelete = useAppSelector(state => state.todoUi.taskToDelete);
+  const showAddEditModal = useAppSelector(state => state.todoUi.showAddEditModal);
+  const showDeleteModal = useAppSelector(state => state.todoUi.showDeleteModal);
+  const dispatch = useAppDispatch();
+
+
 
   const onEditTask = (task: Task) => {
-    setEditingTask(task);
-    setShowAddEditModal(true);
+    dispatch(openEditModal(task));
   };
 
   const onDeleteTask = (task: Task) => {
-    setTaskToDelete(task);
-    setShowDeleteModal(true);
+    dispatch(openDeleteModal(task));
   };
 
   const onAcceptDelete = () => {
-    setTasks(prevTasks =>
-      prevTasks.filter(task => task.id !== taskToDelete?.id)
-    )
-
-    setTaskToDelete(null)
-    setShowDeleteModal(false);
+    if (!taskToDelete) return;
+    dispatch(deleteTask({id: taskToDelete.id}));
+    dispatch(closeDeleteModal());
   };
 
-  const getNextStatus = (status: Status)=> {
-    switch (status) {
-      case Status.TODO:
-        return {
-          status: Status.PROGRESS,
-          progress: 50,
-        };
-      case Status.PROGRESS:
-        return {
-          status: Status.DONE,
-          progress: 100,
-        };
-      case Status.DONE:
-        return {
-          status: Status.TODO,
-          progress: 0,
-        };
-    }
-  };
 
   const onChangeStatus = (taskToChange: Task) => {
-    setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id===taskToChange.id ?
-          {...task, status: getNextStatus(task.status).status, progress: getNextStatus(task.status).progress}
-        :
-          task
-      )
-    )
+    dispatch(changeStatus({id: taskToChange.id}));
   };
 
   const onSubmitTask = (title: string, priority:Prioroty) => {
     if (title.length===0) return;
     if (editingTask) {
-      setTasks((prevTasks) =>
-        prevTasks.map((task) =>
-          (task.id === editingTask.id) ?
-            {...task, title, priority}
-          :
-            task
-        )
-      )
+      dispatch(editTask({id: editingTask.id, title: title, priority: priority}));
     } else {
-      const newTask: Task = {
-        id: String(Date.now()),
-        title,
-        priority: priority,
-        status: Status.TODO,
-        progress: 0,
-      };
-
-      setTasks(prevTasks => [newTask, ...prevTasks])
+      dispatch(addTask({title: title, priority: priority}));
     }
-    setEditingTask(null);
-    setShowAddEditModal(false);
+    dispatch(closeAddEditModal());
   }
 
   return (
@@ -101,13 +64,19 @@ export const TodoList = () => {
             title="Добавить задачу"
             icon={<Add />}
             onClick={() => {
-              setShowAddEditModal(true);
+              dispatch(openAddModal());
             }}
           />
         </div>
         <div className={styles['task-container']}>
           {tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onEdit={onEditTask} onDelete={onDeleteTask} onChangeStatus={onChangeStatus}/>
+            <TaskCard
+              key={task.id}
+              task={task}
+              onEdit={(onEditTask)}
+              onDelete={onDeleteTask}
+              onChangeStatus={onChangeStatus}
+            />
           ))}
         </div>
       </div>
@@ -116,14 +85,18 @@ export const TodoList = () => {
           modalTitle={editingTask ? "Редактировать задачу" :"Добавить задачу"}
           buttonText={editingTask ? "Редактировать" : "Добавить "}
           onClose={() => {
-            setShowAddEditModal(false);
-            setEditingTask(null);
+            dispatch(closeAddEditModal());
           }}
           onAddTask={onSubmitTask}
           editingTask={editingTask}
         />
       )}
-      {showDeleteModal && <DeleteModal onAccept={onAcceptDelete} onQuit={() => setShowDeleteModal(false)}/>}
+      {showDeleteModal &&
+        <DeleteModal
+          onAccept={onAcceptDelete}
+          onQuit={() => dispatch(closeDeleteModal())}
+        />
+      }
     </>
   );
 };
